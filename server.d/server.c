@@ -8,6 +8,7 @@
 #include <errno.h>//for errno
 #include <signal.h>//for signal func
 #include <stdbool.h>
+#include <string.h>
 
 #include "server_comm.h"
 #include "../printpool.d/printpool.h"
@@ -60,13 +61,14 @@ int main(int argc, char *argv[]){
 
     printf("Lintning on TCP port %d\n",tcp_port);
 
-    printpool_t *tp=printpool_init(num_threads,queue_size,0);
-    printf("Thread pool size %d\n",tp->thread_count);
+    printpool_t *pool=printpool_init(num_threads,queue_size,0);
+    printf("Thread pool size %d\n",pool->aantal_printers);
     
     while(1){
         connfd = accept(listenfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
         if(connfd!=-1){
-            printpool_nieuwe_taak(tp,server_run,connfd,0);
+            char filenaam[10] = "test";
+            printpool_nieuwe_taak(pool,filenaam);
 
         }else{
             //sleep for 0.5 seconds
