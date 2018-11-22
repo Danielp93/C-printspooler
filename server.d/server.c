@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #include "server_comm.h"
-#include "printpool.h"
+#include "../printpool.d/printpool.h"
 
 
 #define TCP_PORT  8080
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]){
 
     printf("Lintning on TCP port %d\n",tcp_port);
 
-    threadpool_t *tp=printpool_init(num_threads,queue_size,0);
+    printpool_t *tp=printpool_init(num_threads,queue_size,0);
     printf("Thread pool size %d\n",tp->thread_count);
     
     while(1){

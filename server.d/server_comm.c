@@ -1,7 +1,5 @@
-#include "server_comm.h"
 #include <stdio.h>
 #include <arpa/inet.h>//for htonl and sockaddr_in
-#include "header.h"
 #include <errno.h>//for errno
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -9,6 +7,9 @@
 #include <unistd.h>//for read,write,close
 #include <string.h>//for memset and memcpy
 #include <stdbool.h>
+
+#include "server_comm.h"
+#include "../client.d/header.h"
 
 
 void server_run(int connfd){

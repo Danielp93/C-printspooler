@@ -3,16 +3,16 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "printpool.h"
+#include "../printpool.d/printpool.h"
 
-static void *threadpool_thread(void *threadpool);
+static void *printer(void *printpool);
 
-threadpool_t *printpool_init(int thread_count, int queue_size, int flags)
+printpool_t *printpool_init(int thread_count, int queue_size, int flags)
 {
-    threadpool_t *pool;
+    printpool_t *pool;
     int i;
 
-    if((pool = (threadpool_t *)malloc(sizeof(threadpool_t))) == NULL) {
+    if((pool = (printpool_t *)malloc(sizeof(printpool_t))) == NULL) {
         //ERROR MESSAGE
     }
 
@@ -34,7 +34,7 @@ threadpool_t *printpool_init(int thread_count, int queue_size, int flags)
 
     for(i = 0; i < thread_count; i++) {
         if(pthread_create(&(pool->threads[i]), NULL,
-                          threadpool_thread, (void*)pool) != 0) {
+                          printer, (void*)pool) != 0) {
             return NULL;
         }
         pool->thread_count++;
@@ -44,10 +44,9 @@ threadpool_t *printpool_init(int thread_count, int queue_size, int flags)
     return pool;
 }
 
-void printpool_nieuwe_taak(threadpool_t *pool, void (*function)(int),
+void printpool_nieuwe_taak(printpool_t *pool, void (*function)(int),
                    int argument, int flags)
 {
-    int err = 0;
     int next;
 
     if(pool == NULL || function == NULL) {
@@ -88,10 +87,10 @@ void printpool_nieuwe_taak(threadpool_t *pool, void (*function)(int),
     }
 }
 
-static void *threadpool_thread(void *threadpool)
+static void *printer(void *printpool)
 {
-    threadpool_t *pool = (threadpool_t *)threadpool;
-    printpool_taak task;
+    printpool_t *pool = (printpool_t *)printpool;
+    printpool_taak taak;
 
 
     // TODO: CONNECTION WITH PRINTER HERE
@@ -107,9 +106,9 @@ static void *threadpool_thread(void *threadpool)
             pthread_cond_wait(&(pool->notify), &(pool->lock));
         }
 
-        /* Grab our task */
-        task.function = pool->queue[pool->head].function;
-        task.argument = pool->queue[pool->head].argument;
+        /* Grab our taak */
+        taak.function = pool->queue[pool->head].function;
+        taak.argument = pool->queue[pool->head].argument;
         pool->head += 1;
         pool->head = (pool->head == pool->queue_size) ? 0 : pool->head;
         pool->count -= 1;
@@ -120,7 +119,7 @@ static void *threadpool_thread(void *threadpool)
         /* Get to work */
 
         //INSTEAD OF FUNCTION TAKE FILENAME AND SEND TO PRINTER WAIT FOR RESPONSE
-        (*(task.function))(task.argument);
+        (*(taak.function))(taak.argument);
     }
 
     pool->started--;
