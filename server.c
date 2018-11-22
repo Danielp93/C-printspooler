@@ -7,9 +7,11 @@
 #include <sys/socket.h>
 #include <errno.h>//for errno
 #include <signal.h>//for signal func
-#include "server_comm.h"
-#include "threadpool.h"
 #include <stdbool.h>
+
+#include "server_comm.h"
+#include "printpool.h"
+
 
 #define TCP_PORT  8080
 #define QUEUE_SIZE 10
@@ -58,13 +60,13 @@ int main(int argc, char *argv[]){
 
     printf("Lintning on TCP port %d\n",tcp_port);
 
-    threadpool_t *tp=threadpool_create(num_threads,queue_size,0);
+    threadpool_t *tp=printpool_init(num_threads,queue_size,0);
     printf("Thread pool size %d\n",tp->thread_count);
     
     while(1){
         connfd = accept(listenfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
         if(connfd!=-1){
-            threadpool_add(tp,server_run,connfd,0);
+            printpool_nieuwe_taak(tp,server_run,connfd,0);
 
         }else{
             //sleep for 0.5 seconds

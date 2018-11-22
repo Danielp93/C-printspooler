@@ -1,14 +1,13 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdio.h>
 
-#include "threadpool.h"
+#include "printpool.h"
 
 static void *threadpool_thread(void *threadpool);
 
-int threadpool_free(threadpool_t *pool);
-
-threadpool_t *threadpool_create(int thread_count, int queue_size, int flags)
+threadpool_t *printpool_init(int thread_count, int queue_size, int flags)
 {
     threadpool_t *pool;
     int i;
@@ -23,8 +22,8 @@ threadpool_t *threadpool_create(int thread_count, int queue_size, int flags)
     pool->shutdown = pool->started = 0;
 
     pool->threads = (pthread_t *)malloc(sizeof(pthread_t) * thread_count);
-    pool->queue = (threadpool_task_t *)malloc
-        (sizeof(threadpool_task_t) * queue_size);
+    pool->queue = (printpool_taak *)malloc
+        (sizeof(printpool_taak) * queue_size);
 
     if((pthread_mutex_init(&(pool->lock), NULL) != 0) ||
        (pthread_cond_init(&(pool->notify), NULL) != 0) ||
@@ -45,18 +44,18 @@ threadpool_t *threadpool_create(int thread_count, int queue_size, int flags)
     return pool;
 }
 
-int threadpool_add(threadpool_t *pool, void (*function)(int),
+void printpool_nieuwe_taak(threadpool_t *pool, void (*function)(int),
                    int argument, int flags)
 {
     int err = 0;
     int next;
 
     if(pool == NULL || function == NULL) {
-        return threadpool_invalid;
+        fprintf(stderr, "Pool or taak is non existent!");
     }
 
     if(pthread_mutex_lock(&(pool->lock)) != 0) {
-        return threadpool_lock_failure;
+        fprintf(stderr, "Can't lock Mutex!");
     }
 
     next = pool->tail + 1;
@@ -64,12 +63,12 @@ int threadpool_add(threadpool_t *pool, void (*function)(int),
 
     do {
         if(pool->count == pool->queue_size) {
-            err = threadpool_queue_full;
+            fprintf(stderr, "Job list full!");
             break;
         }
 
         if(pool->shutdown) {
-            err = threadpool_shutdown;
+            fprintf(stderr, "Can't Unlock Mutex!");
             break;
         }
 
@@ -79,28 +78,26 @@ int threadpool_add(threadpool_t *pool, void (*function)(int),
         pool->count += 1;
 
         if(pthread_cond_signal(&(pool->notify)) != 0) {
-            err = threadpool_lock_failure;
+            fprintf(stderr, "Signal Available!");
             break;
         }
     } while(0);
 
     if(pthread_mutex_unlock(&pool->lock) != 0) {
-        err = threadpool_lock_failure;
+        fprintf(stderr, "Can't Unlock Mutex!");
     }
-
-    return err;
 }
 
 static void *threadpool_thread(void *threadpool)
 {
     threadpool_t *pool = (threadpool_t *)threadpool;
-    threadpool_task_t task;
+    printpool_taak task;
 
 
     // TODO: CONNECTION WITH PRINTER HERE
 
 
-    for(;;) {
+    while(1) {
         /* Lock must be taken to wait on conditional variable */
         pthread_mutex_lock(&(pool->lock));
 
@@ -108,12 +105,6 @@ static void *threadpool_thread(void *threadpool)
            When returning from pthread_cond_wait(), we own the lock. */
         while((pool->count == 0) && (!pool->shutdown)) {
             pthread_cond_wait(&(pool->notify), &(pool->lock));
-        }
-
-        if((pool->shutdown == immediate_shutdown) ||
-           ((pool->shutdown == graceful_shutdown) &&
-            (pool->count == 0))) {
-            break;
         }
 
         /* Grab our task */
