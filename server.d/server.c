@@ -19,13 +19,12 @@
 #define POOL_SIZE 3
 
 bool stop;
-const int queue_size=15;
 
 
 int main(int argc, char *argv[]){
     int listenfd, connfd;
-    int num_threads=POOL_SIZE;
     int tcp_port = TCP_PORT;
+    printerinfo_t info;
 
     struct sockaddr_in serv_addr;
     char opt;
@@ -61,7 +60,11 @@ int main(int argc, char *argv[]){
 
     printf("Lintning on TCP port %d\n",tcp_port);
 
-    printpool_t *pool=printpool_init(num_threads,queue_size,0);
+
+    memset(&info, '0', sizeof(printerinfo_t));
+    info.aantal_printers = POOL_SIZE;
+    info.aantal_taken = QUEUE_SIZE;
+    printpool_t *pool=printpool_init(info);
     printf("Thread pool size %d\n",pool->aantal_printers);
     
     while(1){
