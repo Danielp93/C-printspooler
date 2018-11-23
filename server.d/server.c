@@ -22,9 +22,10 @@ bool stop;
 
 
 int main(int argc, char *argv[]){
-    int listenfd, connfd;
+    int listenfd, connfd, i;
     int tcp_port = TCP_PORT;
     printerinfo_t info;
+    char hostnames[3][20] = {"localhost", "localhost1", "localhost2"};
 
     struct sockaddr_in serv_addr;
     char opt;
@@ -58,12 +59,20 @@ int main(int argc, char *argv[]){
         return -1;
     }
 
-    printf("Lintning on TCP port %d\n",tcp_port);
+    printf("Listening on TCP port %d\n",tcp_port);
 
 
     memset(&info, '0', sizeof(printerinfo_t));
     info.aantal_printers = POOL_SIZE;
     info.aantal_taken = QUEUE_SIZE;
+    info.hostnames = malloc(POOL_SIZE * sizeof(char *));
+    for(i = 0; i < POOL_SIZE; i++)
+    {
+        info.hostnames[i] = malloc(sizeof(hostnames[i]));
+        strcpy(info.hostnames[i], hostnames[i]);
+        printf("Printer %d: %s\n", i, info.hostnames[i]);
+    }
+
     printpool_t *pool=printpool_init(info);
     printf("Thread pool size %d\n",pool->aantal_printers);
     

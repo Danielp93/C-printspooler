@@ -3,6 +3,7 @@
 typedef struct {
   int aantal_printers;
   int aantal_taken;
+  char **hostnames;
 } printerinfo_t;
 
 typedef struct {
@@ -20,6 +21,8 @@ typedef struct printpool_t {
   int laatste;
   int huidig_taken;
 }printpool_t;
+
+printerinfo_t *printerinfo_new(int aantal_printers, int aantal_taken, char **adresses, char **ports);
 
 printpool_t *printpool_init(printerinfo_t info);
 

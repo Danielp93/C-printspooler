@@ -20,7 +20,6 @@ printpool_t *printpool_init(printerinfo_t info)
     pool->aantal_printers = 0;
     pool->aantal_taken = info.aantal_taken;
     pool->volgende = pool->laatste = pool->huidig_taken = 0;
-
     pool->printers = (pthread_t *)malloc(sizeof(pthread_t) * info.aantal_printers);
     pool->taken = (printpool_taak *)malloc
         (sizeof(printpool_taak) * info.aantal_taken);
