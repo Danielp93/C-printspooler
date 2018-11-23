@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	// socket create and verification 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0); 
 	if (sockfd == -1) { 
-		printf("Socket creation failed...\n"); 
+		fprintf(stderr,"No such host!\n"); 
 		exit(1); 
 	} 
 	else
@@ -44,16 +44,16 @@ int main(int argc, char *argv[])
 	
 	// Binding newly created socket to given IP and verification 
 	if ((bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr))) != 0) { 
-		printf("socket bind failed...\n"); 
-		exit(0);
+		fprintf(stderr,"Can't bind socket!\n"); 
+		exit(1); 
 	} 
 	else
 		printf("Socket successfully bound..\n"); 
 
 	// Now server is ready to listen and verification 
 	if ((listen(sockfd, 5)) != 0) { 
-		printf("Listen failed...\n"); 
-		exit(0); 
+		fprintf(stderr,"Can't Listen!\n"); 
+		exit(1); 
 	} 
 	else
 		printf("Server listening..\n"); 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 	connfd = accept(sockfd, (struct sockaddr*)&cli, &len); 
 	if (connfd < 0) { 
 		fprintf(stderr, "server acccept failed...\n"); 
-		exit(0); 
+		exit(1); 
 	} 
 	else
 		printf("server acccept the client...\n"); 
@@ -73,15 +73,19 @@ int main(int argc, char *argv[])
     {
         memset(buffer, '0', sizeof(buffer));
         n = read(sockfd, buffer, 40);
-        if (n < 0)
+        if (n < 0){
             fprintf(stderr, "Can't read from socket!\n");
-        printf("printing file %s\n", buffer);
+		}
+
         int waittime = rand() % 10;
+        printf("printing file %s, estimated wait time: %d seconds.\n", buffer);
         sleep(waittime);
         printf("done printing %s\n", buffer);
+		
         n = write(sockfd, "Done", sizeof("done"));
-        if (n < 0)
+        if (n < 0){
             fprintf(stderr, "Can't write to socket!\n");
+		}
     }
 	close(sockfd); 
 }
