@@ -8,7 +8,7 @@
 
 static void *printer(void *printpool);
 
-printpool_t *printpool_init(int thread_count, int queue_size, int flags)
+printpool_t *printpool_init(printerinfo_t info)
 {
     printpool_t *pool;
     int i;
@@ -18,12 +18,12 @@ printpool_t *printpool_init(int thread_count, int queue_size, int flags)
     }
 
     pool->aantal_printers = 0;
-    pool->aantal_taken = queue_size;
+    pool->aantal_taken = info.aantal_taken;
     pool->volgende = pool->laatste = pool->huidig_taken = 0;
 
-    pool->printers = (pthread_t *)malloc(sizeof(pthread_t) * thread_count);
+    pool->printers = (pthread_t *)malloc(sizeof(pthread_t) * info.aantal_printers);
     pool->taken = (printpool_taak *)malloc
-        (sizeof(printpool_taak) * queue_size);
+        (sizeof(printpool_taak) * info.aantal_taken);
 
     if((pthread_mutex_init(&(pool->bezig), NULL) != 0) ||
        (pthread_cond_init(&(pool->beschikbaar), NULL) != 0) ||
@@ -32,7 +32,7 @@ printpool_t *printpool_init(int thread_count, int queue_size, int flags)
         //TODO: ERR MESSAGE
     }
 
-    for(i = 0; i < thread_count; i++) {
+    for(i = 0; i < info.aantal_printers; i++) {
         if(pthread_create(&(pool->printers[i]), NULL,
                           printer, (void*)pool) != 0) {
             return NULL;

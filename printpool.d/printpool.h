@@ -1,6 +1,11 @@
 #include <pthread.h>
 
 typedef struct {
+  int aantal_printers;
+  int aantal_taken;
+} printerinfo_t;
+
+typedef struct {
     char filenaam[10];
 } printpool_taak;
 
@@ -16,6 +21,6 @@ typedef struct printpool_t {
   int huidig_taken;
 }printpool_t;
 
-printpool_t *printpool_init(int thread_count, int queue_size, int flags);
+printpool_t *printpool_init(printerinfo_t info);
 
 void printpool_nieuwe_taak(printpool_t *pool, char filenaam[10]);
