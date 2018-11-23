@@ -6,11 +6,12 @@
 
 #include "../printpool.d/printpool.h"
 
-static void *printer(void *printpool);
+static void *printer(void *printerinfo);
 
-printpool_t *printpool_init(printerinfo_t info)
+printpool_t *printpool_init(printerpoolinfo_t info)
 {
     printpool_t *pool;
+    printerinfo_t **printerinfos;
     int i;
 
     if((pool = (printpool_t *)malloc(sizeof(printpool_t))) == NULL) {
@@ -31,14 +32,24 @@ printpool_t *printpool_init(printerinfo_t info)
         //TODO: ERR MESSAGE
     }
 
+    printf("Printerpool size = %d:\n", info.aantal_printers);
+    printerinfos = malloc(sizeof(printerinfo_t) * info.aantal_printers);
     for(i = 0; i < info.aantal_printers; i++) {
+        printerinfos[i] = (printerinfo_t*) malloc(sizeof(printerinfo_t));
+        printerinfos[i]->host = malloc(sizeof(info.hosts[i]));
+        printerinfos[i]->port = malloc(sizeof(info.ports[i]));
+        printerinfos[i]->printpool = malloc(sizeof(pool));
+        
+        strncpy(printerinfos[i]->host, info.hosts[i], strlen(info.hosts[i]));
+        strncpy(printerinfos[i]->port, info.ports[i], strlen(info.ports[i]));
+        printerinfos[i]->printpool = pool;
+
         if(pthread_create(&(pool->printers[i]), NULL,
-                          printer, (void*)pool) != 0) {
+                          printer, (void*)printerinfos[i]) != 0) {
             return NULL;
         }
         pool->aantal_printers++;
     }
-
     return pool;
 }
 
@@ -63,7 +74,7 @@ void printpool_nieuwe_taak(printpool_t *pool, char filenaam[10])
             break;
         }
 
-        strcpy(pool->taken[pool->laatste].filenaam, filenaam);
+        strncpy(pool->taken[pool->laatste].filenaam, filenaam, strlen(filenaam));
         pool->laatste = next;
         pool->huidig_taken += 1;
 
@@ -78,12 +89,13 @@ void printpool_nieuwe_taak(printpool_t *pool, char filenaam[10])
     }
 }
 
-static void *printer(void *printpool)
+static void *printer(void *printerinfo)
 {
-    printpool_t *pool = (printpool_t *)printpool;
+    printerinfo_t *pi = (printerinfo_t *) printerinfo; 
+    printpool_t *pool = (printpool_t *) pi->printpool;
     printpool_taak taak;
 
-
+    fprintf(stdout, "\tPrinter[%s:%s] succesfully started.\n", pi->host, pi->port);
     // TODO: CONNECTION WITH PRINTER HERE
 
 

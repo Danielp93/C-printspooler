@@ -24,8 +24,10 @@ bool stop;
 int main(int argc, char *argv[]){
     int listenfd, connfd, i;
     int tcp_port = TCP_PORT;
-    printerinfo_t info;
-    char hostnames[3][20] = {"localhost", "localhost1", "localhost2"};
+    printerpoolinfo_t info;
+    printpool_t *pool;
+    char hosts[3][20] = {"localhost", "localhost1", "localhost2"};
+    char ports[3][10] = {"8080","8081","8082"};
 
     struct sockaddr_in serv_addr;
     char opt;
@@ -62,19 +64,20 @@ int main(int argc, char *argv[]){
     printf("Listening on TCP port %d\n",tcp_port);
 
 
-    memset(&info, '0', sizeof(printerinfo_t));
+    memset(&info, '0', sizeof(printerpoolinfo_t));
     info.aantal_printers = POOL_SIZE;
     info.aantal_taken = QUEUE_SIZE;
-    info.hostnames = malloc(POOL_SIZE * sizeof(char *));
+    info.hosts = malloc(POOL_SIZE * sizeof(char *));
+    info.ports = malloc(POOL_SIZE * sizeof(char *)); 
     for(i = 0; i < POOL_SIZE; i++)
     {
-        info.hostnames[i] = malloc(sizeof(hostnames[i]));
-        strcpy(info.hostnames[i], hostnames[i]);
-        printf("Printer %d: %s\n", i, info.hostnames[i]);
+        info.hosts[i] = malloc(sizeof(hosts[i]));
+        info.ports[i] = malloc(sizeof(ports[i]));
+        strncpy(info.hosts[i], hosts[i], strlen(hosts[i]));
+        strncpy(info.ports[i], ports[i], strlen(ports[i]));
     }
 
-    printpool_t *pool=printpool_init(info);
-    printf("Thread pool size %d\n",pool->aantal_printers);
+    pool=printpool_init(info);
     
     while(1){
         connfd = accept(listenfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
