@@ -15,13 +15,13 @@ typedef struct {
 
 typedef struct {
     char filenaam[10];
-} printpool_taak;
+} printpool_taak_t;
 
 typedef struct printpool_t {
   pthread_mutex_t bezig;
   pthread_cond_t beschikbaar;
   pthread_t *printers;
-  printpool_taak *taken;
+  printpool_taak_t *taken;
   int aantal_printers;
   int aantal_taken;
   int volgende;

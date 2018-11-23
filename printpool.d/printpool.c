@@ -15,21 +15,21 @@ printpool_t *printpool_init(printerpoolinfo_t info)
     int i;
 
     if((pool = (printpool_t *)malloc(sizeof(printpool_t))) == NULL) {
-        //ERROR MESSAGE
+        fprintf(stderr, "Can't allocate memory for printpool!");
     }
 
     pool->aantal_printers = 0;
     pool->aantal_taken = info.aantal_taken;
     pool->volgende = pool->laatste = pool->huidig_taken = 0;
     pool->printers = (pthread_t *)malloc(sizeof(pthread_t) * info.aantal_printers);
-    pool->taken = (printpool_taak *)malloc
-        (sizeof(printpool_taak) * info.aantal_taken);
+    pool->taken = (printpool_taak_t *)malloc
+        (sizeof(printpool_taak_t) * info.aantal_taken);
 
     if((pthread_mutex_init(&(pool->bezig), NULL) != 0) ||
        (pthread_cond_init(&(pool->beschikbaar), NULL) != 0) ||
        (pool->printers == NULL) ||
        (pool->taken == NULL)) {
-        //TODO: ERR MESSAGE
+        fprintf(stderr, "Can't init mutex/signal!");
     }
 
     printf("Printerpool size = %d:\n", info.aantal_printers);
@@ -93,38 +93,29 @@ static void *printer(void *printerinfo)
 {
     printerinfo_t *pi = (printerinfo_t *) printerinfo; 
     printpool_t *pool = (printpool_t *) pi->printpool;
-    printpool_taak taak;
+    printpool_taak_t taak;
 
     fprintf(stdout, "\tPrinter[%s:%s] succesfully started.\n", pi->host, pi->port);
     // TODO: CONNECTION WITH PRINTER HERE
 
 
     while(1) {
-        /* Lock must be taken to wait on conditional variable */
         pthread_mutex_lock(&(pool->bezig));
 
-        /* Wait on condition variable, check for spurious wakeups.
-           When returning from pthread_cond_wait(), we own the bezig. */
         while((pool->huidig_taken == 0)) {
             pthread_cond_wait(&(pool->beschikbaar), &(pool->bezig));
         }
 
-        /* Grab our taak */
         strcpy(taak.filenaam,pool->taken[pool->volgende].filenaam);
         pool->volgende += 1;
         pool->volgende = (pool->volgende == pool->aantal_taken) ? 0 : pool->volgende;
         pool->huidig_taken -= 1;
 
-        /* Unlock */
         pthread_mutex_unlock(&(pool->bezig));
 
-        /* Get to work */
-
-        //INSTEAD OF FUNCTION TAKE FILENAME AND SEND TO PRINTER WAIT FOR RESPONSE
-        fprintf(stderr, "%s", taak.filenaam);
+        fprintf(stdout, "%s", taak.filenaam);
     }
 
     pthread_mutex_unlock(&(pool->bezig));
     pthread_exit(NULL);
-    return(NULL);
 }
