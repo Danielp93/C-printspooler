@@ -19,8 +19,13 @@ typedef struct {
 } printer_conn_t;
 
 typedef struct {
-    char filenaam[20];
+  char filenaam[20];
 } printpool_taak_t;
+
+typedef struct {
+  int connfd;
+  void *printpool;
+} client_conn_info_t;
 
 typedef struct printpool_t {
   pthread_mutex_t bezig;
@@ -38,6 +43,6 @@ printerpoolinfo_t *printerinfo_new(int aantal_printers, int aantal_taken, char *
 
 printpool_t *printpool_init(printerpoolinfo_t info);
 
-void printpool_nieuwe_taak(printpool_t *pool, char filenaam[10]);
+void printpool_nieuwe_taak(printpool_t *pool, char filenaam[20]);
 
 printer_conn_t printer_connection(void *printerinfo);

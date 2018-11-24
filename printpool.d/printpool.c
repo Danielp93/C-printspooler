@@ -127,7 +127,7 @@ static void *printer(void *printerinfo)
 
         pthread_mutex_unlock(&(pool->bezig));
 
-        fprintf(stdout, "Sending %s to printer\n", taak.filenaam);
+        fprintf(stdout, "Sending %s to printer[%s:%d]\n", taak.filenaam, pi->host, pi->port);
         write(connection.connfd, taak.filenaam, sizeof(taak.filenaam));
         read(connection.connfd, buffer, sizeof(buffer));
         printf("Printer[%s] returned %s with %s.\n\n", inet_ntoa(connection.server.sin_addr), buffer, taak.filenaam);

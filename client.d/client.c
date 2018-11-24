@@ -5,19 +5,30 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <signal.h>
 #include "string.h"
 
 #include "client.h"
 
 
-#define TCP_PORT 8081
-#define QUEUE_SIZE 10
-#define POOL_SIZE 4
+#define TCP_PORT 9000
 
-int main(int argc, char *argv[]){
-    
+static int running = 1;
+
+void INThandler(int signo){
+    if(signo == SIGINT){
+        fprintf(stderr, "\nCTRL-C CAPTURED\n");
+        running = 0;
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    signal(SIGINT, INThandler);
     client_conn_t *client_conn  = client_init("localhost", TCP_PORT);
-    printf("Server addr: %sConnfd: %d\n",  inet_ntoa(client_conn->server.sin_addr), client_conn->connfd);
+    client_send_task(client_conn);
+    close(client_conn->connfd);
+    free(client_conn);
     return 0;
 }
 
@@ -64,5 +75,16 @@ client_conn_t *client_init(const char* server_addr, const int portno)
     return client_conn;
 }
 
-
-
+void client_send_task(client_conn_t *client_conn)
+{
+    char filenaam[20]; 
+    int n; 
+    while(running) { 
+        bzero(filenaam, sizeof(filenaam)); 
+        printf("Enter filenaam : "); 
+        n = 0; 
+        while ((filenaam[n++] = getchar()) != '\n');
+        filenaam[strcspn(filenaam, "\n")] = 0;
+        write(client_conn->connfd, filenaam, sizeof(filenaam));
+    }
+}

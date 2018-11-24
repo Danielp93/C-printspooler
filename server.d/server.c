@@ -13,20 +13,22 @@
 #include "../printpool.d/printpool.h"
 
 
-#define TCP_PORT  8080
+#define TCP_PORT  9000
 #define QUEUE_SIZE 30
-#define POOL_SIZE 1
+#define POOL_SIZE 3
 
-bool stop;
+static bool stop = 0;
 
+void * handle_client(void * pool);
 
 int main(int argc, char *argv[]){
+
     int sockfd, connfd, i;
     int tcp_port = TCP_PORT;
     printerpoolinfo_t info;
     printpool_t *pool;
-    char hosts[POOL_SIZE][20] = {"localhost"};
-    int ports[POOL_SIZE] = {8080};
+    char hosts[POOL_SIZE][20] = {"localhost", "localhost", "localhost"};
+    int ports[POOL_SIZE] = {8080, 8081, 8082};
 
     struct sockaddr_in serv_addr;
     char opt;
@@ -45,7 +47,7 @@ int main(int argc, char *argv[]){
     serv_addr.sin_port=htons(tcp_port);
 
     if(bind(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1){
-        fprintf(stderr, "Socket binding failed");
+        fprintf(stderr, "Socket binding failed\n");
         if(errno == EADDRINUSE)
             fprintf(stderr,"Another socket is already listening on the same port\n");
         return -1;
@@ -75,12 +77,16 @@ int main(int argc, char *argv[]){
     }
 
     pool=printpool_init(info);
-    
+    pthread_t child;
     while(1){
         connfd = accept(sockfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
         if(connfd!=-1){
-            char filenaam[20] = "Testfile.txt";
-            printpool_nieuwe_taak(pool,filenaam);
+            client_conn_info_t *client_info = malloc(sizeof(client_conn_info_t));
+            client_info->printpool = malloc(sizeof(pool));
+            client_info->connfd = connfd;
+            client_info->printpool = pool;
+
+            pthread_create(&child, NULL, handle_client, client_info);
         }else{
             //sleep for 0.5 seconds
             usleep(500000);
@@ -88,4 +94,24 @@ int main(int argc, char *argv[]){
     }
     close(sockfd);
     return 0;
+}
+
+void * handle_client(void * client_info)
+{
+    client_conn_info_t *info = (client_conn_info_t *) client_info;
+
+    char filenaam[20];
+    while(1) {
+		//clear out filenaam
+		bzero(filenaam, sizeof(filenaam)); 
+		// Read in client numbers
+		if(read(info->connfd, filenaam, sizeof(filenaam)) <= 0){
+			fprintf(stderr, "\nA Client closed a connection.\n");
+			close(info->connfd);
+            return 0;
+		}
+        printpool_nieuwe_taak((printpool_t *) info->printpool, filenaam);
+
+		fprintf(stdout, "\nNew Task %s added.\n", filenaam);
+    }
 }
