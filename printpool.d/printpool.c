@@ -58,6 +58,8 @@ printpool_t *printpool_init(printerpoolinfo_t info)
 void printpool_nieuwe_taak(printpool_t *pool, char filenaam[20])
 {
     int next;
+    
+    fprintf(stdout, "Printing file: %s\n", filenaam);
 
     if(pool == NULL || filenaam == NULL) {
         fprintf(stderr, "Pool or taak is non existent!");

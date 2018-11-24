@@ -13,8 +13,8 @@
 #include "../printpool.d/printpool.h"
 
 
-#define TCP_PORT  8081
-#define QUEUE_SIZE 10
+#define TCP_PORT  8080
+#define QUEUE_SIZE 30
 #define POOL_SIZE 1
 
 bool stop;
@@ -45,10 +45,9 @@ int main(int argc, char *argv[]){
     serv_addr.sin_port=htons(tcp_port);
 
     if(bind(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1){
-        fprintf(stderr, "Error:Bindint with port # %d failed\n",tcp_port);
-        fprintf(stderr, "Errno %d\n",errno);
+        fprintf(stderr, "Socket binding failed");
         if(errno == EADDRINUSE)
-            printf("Another socket is already listening on the same port\n");
+            fprintf(stderr,"Another socket is already listening on the same port\n");
         return -1;
     }
 
@@ -80,7 +79,7 @@ int main(int argc, char *argv[]){
     while(1){
         connfd = accept(sockfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
         if(connfd!=-1){
-            char filenaam[20] = "test";
+            char filenaam[20] = "Testfile.txt";
             printpool_nieuwe_taak(pool,filenaam);
         }else{
             //sleep for 0.5 seconds

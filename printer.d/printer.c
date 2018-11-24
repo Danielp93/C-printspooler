@@ -78,11 +78,17 @@ void printing(int sockfd)
 		//clear out buff
 		bzero(buff, sizeof(buff)); 
 		// Read in client numbers
-		read(sockfd, buff, sizeof(buff));
+		if(read(sockfd, buff, sizeof(buff)) <= 0){
+			fprintf(stderr, "Closing down socket!");
+			exit(1);
+		}
         int waittime = rand() % 10;
 		fprintf(stdout, "Printing: %s\nDuration: %d seconds.\n", buff, waittime);
         sleep(waittime);
-		write(sockfd, "DONE", strlen("DONE")); 
+		if(write(sockfd, "DONE", sizeof("DONE")) < 0){
+			fprintf(stderr, "Closing down socket!");
+			exit(1);
+		} 
 		fprintf(stdout, "Done with %s\n\n", buff);
 	} 
 } 
