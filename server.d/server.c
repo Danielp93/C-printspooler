@@ -10,29 +10,28 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "server_comm.h"
 #include "../printpool.d/printpool.h"
 
 
-#define TCP_PORT  8080
+#define TCP_PORT  8081
 #define QUEUE_SIZE 10
-#define POOL_SIZE 3
+#define POOL_SIZE 1
 
 bool stop;
 
 
 int main(int argc, char *argv[]){
-    int listenfd, connfd, i;
+    int sockfd, connfd, i;
     int tcp_port = TCP_PORT;
     printerpoolinfo_t info;
     printpool_t *pool;
-    char hosts[3][20] = {"localhost", "localhost1", "localhost2"};
-    char ports[3][10] = {"8080","8081","8082"};
+    char hosts[POOL_SIZE][20] = {"localhost"};
+    int ports[POOL_SIZE] = {8080};
 
     struct sockaddr_in serv_addr;
     char opt;
 
-    if((listenfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0))== -1)
+    if((sockfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0))== -1)
     {
         printf("Error : Could not create socket\n");
         printf("Errno %d\n",errno);
@@ -45,7 +44,7 @@ int main(int argc, char *argv[]){
     serv_addr.sin_addr.s_addr=htonl(INADDR_ANY);
     serv_addr.sin_port=htons(tcp_port);
 
-    if(bind(listenfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1){
+    if(bind(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1){
         fprintf(stderr, "Error:Bindint with port # %d failed\n",tcp_port);
         fprintf(stderr, "Errno %d\n",errno);
         if(errno == EADDRINUSE)
@@ -53,7 +52,7 @@ int main(int argc, char *argv[]){
         return -1;
     }
 
-    if(listen(listenfd, QUEUE_SIZE) == -1){
+    if(listen(sockfd, QUEUE_SIZE) == -1){
         printf("Error:Failed to listen\n");
         printf("Errno %d\n",errno);
         if(errno == EADDRINUSE)
@@ -68,29 +67,26 @@ int main(int argc, char *argv[]){
     info.aantal_printers = POOL_SIZE;
     info.aantal_taken = QUEUE_SIZE;
     info.hosts = malloc(POOL_SIZE * sizeof(char *));
-    info.ports = malloc(POOL_SIZE * sizeof(char *)); 
+    info.ports = malloc(POOL_SIZE * sizeof(int)); 
     for(i = 0; i < POOL_SIZE; i++)
     {
         info.hosts[i] = malloc(sizeof(hosts[i]));
-        info.ports[i] = malloc(sizeof(ports[i]));
         strncpy(info.hosts[i], hosts[i], strlen(hosts[i]));
-        strncpy(info.ports[i], ports[i], strlen(ports[i]));
+        info.ports[i] = ports[i];
     }
 
     pool=printpool_init(info);
     
     while(1){
-        connfd = accept(listenfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
+        connfd = accept(sockfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
         if(connfd!=-1){
-            char filenaam[10] = "test";
+            char filenaam[20] = "test";
             printpool_nieuwe_taak(pool,filenaam);
-
         }else{
             //sleep for 0.5 seconds
             usleep(500000);
         }
     }
-    
-    close(listenfd);
+    close(sockfd);
     return 0;
 }

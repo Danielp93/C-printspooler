@@ -4,17 +4,22 @@ typedef struct {
   int aantal_printers;
   int aantal_taken;
   char **hosts;
-  char **ports;
+  int *ports;
 } printerpoolinfo_t;
 
 typedef struct {
   void *printpool;
   char *host;
-  char *port; 
+  int port; 
 } printerinfo_t;
 
 typedef struct {
-    char filenaam[10];
+  int connfd;
+  struct sockaddr_in server;
+} printer_conn_t;
+
+typedef struct {
+    char filenaam[20];
 } printpool_taak_t;
 
 typedef struct printpool_t {
@@ -34,3 +39,5 @@ printerpoolinfo_t *printerinfo_new(int aantal_printers, int aantal_taken, char *
 printpool_t *printpool_init(printerpoolinfo_t info);
 
 void printpool_nieuwe_taak(printpool_t *pool, char filenaam[10]);
+
+printer_conn_t printer_connection(void *printerinfo);

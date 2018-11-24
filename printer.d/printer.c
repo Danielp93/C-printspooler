@@ -7,35 +7,30 @@
 #include <sys/types.h>
 #include <unistd.h>
  
+void printing(int connfd);
+
 int main(int argc, char *argv[])
 { 
-	int sockfd, connfd, portno, len, n;
+	int sockfd, connfd, portno, len;
     struct sockaddr_in servaddr, cli;
     struct hostent *server;
-    char buffer[40];
 
    if (argc < 2) {
          fprintf(stderr,"No port provided!\n");
          exit(1);
     }
     portno = atoi(argv[1]);
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
-        fprintf(stderr, "Can't open socket!\n");
-    server = gethostbyname(argv[1]);
-    if (server == NULL) {
-        fprintf(stderr,"No such host!\n");
-        exit(1);
-    }
-
+    
 	// socket create and verification 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0); 
 	if (sockfd == -1) { 
-		fprintf(stderr,"No such host!\n"); 
+		fprintf(stderr,"Can't open socket!\n"); 
 		exit(1); 
 	} 
-	else
+	else{
 		printf("Socket successfully created..\n"); 
+	}
+	
 	bzero(&servaddr, sizeof(servaddr));
 	// assign IP, PORT 
 	servaddr.sin_family = AF_INET; 
@@ -65,27 +60,29 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "server acccept failed...\n"); 
 		exit(1); 
 	} 
-	else
-		printf("server acccept the client...\n"); 
+	else{ 
+		printf("server acccepted the client...\n");
+	}
 
-    
-	while (1)
-    {
-        memset(buffer, '0', sizeof(buffer));
-        n = read(sockfd, buffer, 40);
-        if (n < 0){
-            fprintf(stderr, "Can't read from socket!\n");
-		}
+	printing(connfd);
 
-        int waittime = rand() % 10;
-        printf("printing file %s, estimated wait time: %d seconds.\n", buffer);
-        sleep(waittime);
-        printf("done printing %s\n", buffer);
-		
-        n = write(sockfd, "Done", sizeof("done"));
-        if (n < 0){
-            fprintf(stderr, "Can't write to socket!\n");
-		}
-    }
-	close(sockfd); 
+    close(sockfd); 
 }
+
+void printing(int sockfd) 
+{ 
+	char buff[20]; 
+	int n; 
+	//Loop for asking for numbers 
+	for (;;) {
+		//clear out buff
+		bzero(buff, sizeof(buff)); 
+		// Read in client numbers
+		read(sockfd, buff, sizeof(buff));
+        int waittime = rand() % 10;
+		fprintf(stdout, "Printing: %s\nDuration: %d seconds.\n", buff, waittime);
+        sleep(waittime);
+		write(sockfd, "DONE", strlen("DONE")); 
+		fprintf(stdout, "Done with %s\n\n", buff);
+	} 
+} 

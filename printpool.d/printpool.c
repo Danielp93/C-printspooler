@@ -3,8 +3,11 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
-#include "../printpool.d/printpool.h"
+#include "printpool.h"
 
 static void *printer(void *printerinfo);
 
@@ -37,11 +40,10 @@ printpool_t *printpool_init(printerpoolinfo_t info)
     for(i = 0; i < info.aantal_printers; i++) {
         printerinfos[i] = (printerinfo_t*) malloc(sizeof(printerinfo_t));
         printerinfos[i]->host = malloc(sizeof(info.hosts[i]));
-        printerinfos[i]->port = malloc(sizeof(info.ports[i]));
         printerinfos[i]->printpool = malloc(sizeof(pool));
         
         strncpy(printerinfos[i]->host, info.hosts[i], strlen(info.hosts[i]));
-        strncpy(printerinfos[i]->port, info.ports[i], strlen(info.ports[i]));
+        printerinfos[i]->port = info.ports[i];
         printerinfos[i]->printpool = pool;
 
         if(pthread_create(&(pool->printers[i]), NULL,
@@ -53,7 +55,7 @@ printpool_t *printpool_init(printerpoolinfo_t info)
     return pool;
 }
 
-void printpool_nieuwe_taak(printpool_t *pool, char filenaam[10])
+void printpool_nieuwe_taak(printpool_t *pool, char filenaam[20])
 {
     int next;
 
@@ -94,11 +96,21 @@ static void *printer(void *printerinfo)
     printerinfo_t *pi = (printerinfo_t *) printerinfo; 
     printpool_t *pool = (printpool_t *) pi->printpool;
     printpool_taak_t taak;
+    printer_conn_t connection;
+    char buffer[10];
+    int sockfd, n;
 
-    fprintf(stdout, "\tPrinter[%s:%s] succesfully started.\n", pi->host, pi->port);
-    // TODO: CONNECTION WITH PRINTER HERE
+    fprintf(stdout, "\tPrinter[%s:%d] succesfully started.\n", pi->host, pi->port);
 
-
+    connection = printer_connection(printerinfo);
+    if(connection.connfd == -1)
+    {
+        fprintf(stderr, "\t\tPrinter[%s:%d] connection failed!", pi->host, pi->port);
+        exit(1);
+    }else{
+        fprintf(stdout, "\t\tPrinter[%s:%d] connection succesfull.\n", pi->host, pi->port);
+    }
+    
     while(1) {
         pthread_mutex_lock(&(pool->bezig));
 
@@ -113,9 +125,55 @@ static void *printer(void *printerinfo)
 
         pthread_mutex_unlock(&(pool->bezig));
 
-        fprintf(stdout, "%s", taak.filenaam);
+        fprintf(stdout, "Sending %s to printer\n", taak.filenaam);
+        write(connection.connfd, taak.filenaam, sizeof(taak.filenaam));
+        read(connection.connfd, buffer, sizeof(buffer));
+        printf("Printer[%s] returned %s with %s.\n\n", inet_ntoa(connection.server.sin_addr), buffer, taak.filenaam);
     }
-
+    close(sockfd);
     pthread_mutex_unlock(&(pool->bezig));
     pthread_exit(NULL);
+}
+
+printer_conn_t printer_connection(void *printerinfo)
+{
+    printerinfo_t *pi = (printerinfo_t * ) printerinfo;
+    printer_conn_t pconn;
+    int sockfd;
+    struct hostent *server;
+    struct in_addr **addr_list;
+
+    if((sockfd = socket(AF_INET,SOCK_STREAM,0))<0)
+    {
+        fprintf(stderr, "Can't create Socket!\n");
+        exit(1);
+    }
+    
+    server = gethostbyname(pi->host);
+    addr_list = (struct in_addr **) server->h_addr_list;
+
+    if (server == NULL) {
+        fprintf(stderr,"No such host!\n");
+        exit(1);
+    }
+
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port=htons(pi->port);
+    if(inet_pton(AF_INET, inet_ntoa(*addr_list[0]), &serv_addr.sin_addr) <= 0)
+    {
+        printf("\n inet_pton error occured\n");
+        exit(1);
+    }
+    if(connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+       printf("\n Error : Connect Failed \n");
+       exit(1);
+    }
+    
+    memcpy(&pconn.connfd, &sockfd, sizeof(int));
+    memcpy(&pconn.server, &serv_addr, sizeof(serv_addr));
+
+    return pconn;
 }

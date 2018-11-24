@@ -2,10 +2,8 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <arpa/inet.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
 #include "client_comm.h"
 #include "string.h"
 
@@ -72,8 +70,5 @@ int main(int argc, char *argv[]){
     printf("Server connected\n");
     client_comm *temp  = client_init(sockid,file,server_addr);
     client_run(temp);
-
-
-
     return 0;
 }
