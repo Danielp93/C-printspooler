@@ -24,8 +24,16 @@ void INThandler(int signo){
 
 int main(int argc, char *argv[])
 {
+    int portno;
+     if (argc < 2) {
+       fprintf(stderr,"usage %s hostname:port\n", argv[0]);
+       exit(1);
+    }
+    char *hostname= strsep(&argv[1], ":");
+
+
     signal(SIGINT, INThandler);
-    client_conn_t *client_conn  = client_init("localhost", TCP_PORT);
+    client_conn_t *client_conn  = client_init(hostname, atoi(argv[1]));
     client_send_task(client_conn);
     close(client_conn->connfd);
     free(client_conn);

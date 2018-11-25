@@ -130,7 +130,7 @@ static void *printer(void *printerinfo)
         fprintf(stdout, "Sending %s to printer[%s:%d]\n", taak.filenaam, pi->host, pi->port);
         write(connection.connfd, taak.filenaam, sizeof(taak.filenaam));
         read(connection.connfd, buffer, sizeof(buffer));
-        printf("Printer[%s] returned %s with %s.\n\n", inet_ntoa(connection.server.sin_addr), buffer, taak.filenaam);
+        printf("Printer[%s:%d] returned %s with %s.\n\n", pi->host,pi->port, buffer, taak.filenaam);
     }
     close(sockfd);
     pthread_mutex_unlock(&(pool->bezig));

@@ -12,10 +12,7 @@
 
 #include "../printpool.d/printpool.h"
 
-
-#define TCP_PORT  9000
 #define QUEUE_SIZE 30
-#define POOL_SIZE 3
 
 static bool stop = 0;
 
@@ -24,11 +21,25 @@ void * handle_client(void * pool);
 int main(int argc, char *argv[]){
 
     int sockfd, connfd, i;
-    int tcp_port = TCP_PORT;
     printerpoolinfo_t info;
     printpool_t *pool;
-    char hosts[POOL_SIZE][20] = {"localhost", "localhost", "localhost"};
-    int ports[POOL_SIZE] = {8080, 8081, 8082};
+
+    int pool_size = argc - 2;
+    int tcp_port = atoi(argv[1]);
+
+    char **hosts = malloc(sizeof(char *) * (argc - 1));
+    int *ports = malloc(sizeof(int) * (argc - 1));
+
+    for(i = 0; i < pool_size; i++){
+        char *hostname= strsep(&argv[i + 2], ":");
+        hosts[i] = malloc(sizeof(&hostname));
+        strncpy(hosts[i], hostname, strlen(hostname));
+        ports[i] = atoi(argv[i + 2]);
+    }
+
+    for(i = 0; i < pool_size; i++){
+        printf("%s %d\n", hosts[i], ports[i]);
+    }
 
     struct sockaddr_in serv_addr;
     char opt;
@@ -65,11 +76,11 @@ int main(int argc, char *argv[]){
 
 
     memset(&info, '0', sizeof(printerpoolinfo_t));
-    info.aantal_printers = POOL_SIZE;
+    info.aantal_printers = pool_size;
     info.aantal_taken = QUEUE_SIZE;
-    info.hosts = malloc(POOL_SIZE * sizeof(char *));
-    info.ports = malloc(POOL_SIZE * sizeof(int)); 
-    for(i = 0; i < POOL_SIZE; i++)
+    info.hosts = malloc(pool_size * sizeof(char *));
+    info.ports = malloc(pool_size * sizeof(int)); 
+    for(i = 0; i < pool_size; i++)
     {
         info.hosts[i] = malloc(sizeof(hosts[i]));
         strncpy(info.hosts[i], hosts[i], strlen(hosts[i]));
