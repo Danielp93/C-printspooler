@@ -20,7 +20,7 @@ $ ./client HOST:PORT
 $ ./server LISTENPORT HOST1:PORT1 HOST2:PORT2 HOSTn:PORTn
 $ ./printer LISTENPORT
 ```
-[![asciicast](https://asciinema.org/a/JqwV6yDUP0WHLBtUI7btI2OCG.png)](https://asciinema.org/a/JqwV6yDUP0WHLBtUI7btI2OCG)
+<a href="https://asciinema.org/a/213747" target="_blank"><img src="https://asciinema.org/a/213747.svg" /></a>
 
 Send filenames on client, watch them getting processed on printers.
 
