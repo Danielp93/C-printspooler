@@ -88,17 +88,18 @@ void * handle_client(void * client_conn_info)
 {
     client_conn_t *connection = (client_conn_t *) client_conn_info;
     char request[40], fname[40];
-	;
     while(1) {
 		//clear out request
 		memset(request, '\0', sizeof(request));
 		// Read in client request
 		if(read(connection->connfd, request, sizeof(request)) <= 0){
 			fprintf(stderr, "\nA Client closed a connection.\n");
+			fflush(stderr);
 			close(connection->connfd);
             return 0;
 		}
 		fprintf(stdout, "[%s]%s\n", inet_ntoa(connection->server.sin_addr), request);
+		fflush(stdout);
 		char *reqpointer = strstr(request, " HTTP/1.0");
 		if(reqpointer != NULL) {
 			*reqpointer = '\0';
@@ -115,7 +116,7 @@ void * handle_client(void * client_conn_info)
 			continue;
 		}
 		fname[sizeof(request)] = '\0';
-		FILE *fp = fopen(fname, "rb");
+		FILE *fp = fopen(fname, "r");
 		char    *filebuffer;
 		long    numbytes;
 		if(fp == NULL)
@@ -126,13 +127,14 @@ void * handle_client(void * client_conn_info)
 		fseek(fp, 0L, SEEK_END);
 		numbytes = ftell(fp);
 		fseek(fp, 0L, SEEK_SET);
-		filebuffer = (char*) calloc(numbytes, sizeof(char));if(filebuffer == NULL)
+		filebuffer = (char*) malloc(numbytes * sizeof(char));if(filebuffer == NULL)
 		{
 			write(connection->connfd, "Can't read file", sizeof(request));
 		}
 		fread(filebuffer, sizeof(char), numbytes, fp);
-		fclose(fp);
 		write(connection->connfd, filebuffer, numbytes);
+		fclose(fp);
+		free(filebuffer);
     }
     pthread_exit(NULL);
 }

@@ -20,9 +20,14 @@ $ ./client HOST:PORT
 $ ./server LISTENPORT HOST1:PORT1 HOST2:PORT2 HOSTn:PORTn
 $ ./printer LISTENPORT
 ```
-<a href="https://asciinema.org/a/213747" target="_blank"><img src="https://asciinema.org/a/213747.svg" /></a>
 
 Send filenames on client, watch them getting processed on printers.
+
+#### Demonstration
+[![asciicast](https://asciinema.org/a/213747.svg)](https://asciinema.org/a/213747)
+
+
+### Simple HTTP Server
 
 ```console
 $ make
@@ -37,6 +42,8 @@ Also working:
 ```console
 $ curl --http1.0 localhost:<listenport>/<filenaam>
 ```
+
+#### Demonstration
 
 ---
 For info Danielpot93@gmail.nl
