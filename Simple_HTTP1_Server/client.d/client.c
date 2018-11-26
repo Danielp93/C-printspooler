@@ -87,11 +87,12 @@ client_conn_t *client_init(const char* server_addr, const int portno)
 void client_send_task(client_conn_t *client_conn)
 {
     char request[40];
-    int n, inc_length, offset, total_length =0;
-    char *response = NULL;
+    int n;
     while(running) {
+        char *response = NULL;
+        int inc_length, offset, total_length = 0;
         //Zero out request buffer and variables for new request
-        memset(request, 0, sizeof(request));  
+        memset(request, 0, sizeof(request));
         n = 0;
         //Input Request -> GET /<FILE> HTML/1.0
         while ((request[n++] = getchar()) != '\n');
@@ -108,8 +109,7 @@ void client_send_task(client_conn_t *client_conn)
         while(1){
             
             //Check size of incomming message, if nothing comming, print message.
-            ioctl(client_conn->connfd, FIONREAD, inc_length);
-            fprintf(stdout, "%d\n", inc_length);
+            ioctl(client_conn->connfd, FIONREAD, &inc_length);
             if(inc_length != 0){
                 total_length += inc_length;
                 //Allocate memory for new message block
@@ -126,9 +126,9 @@ void client_send_task(client_conn_t *client_conn)
             else{
                 fprintf(stdout, "%s\n", response);
                 fflush(stdout);
-                memset(response, 0, sizeof(response));
                 break;
             }
         }
+    free(response);
     }
 }

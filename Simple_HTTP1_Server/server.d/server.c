@@ -71,10 +71,10 @@ int main(int argc, char *argv[])
     while(1){
         connfd = accept(sockfd, (struct sockaddr*)&cli ,&len); // accept awaiting request
         if(connfd!=-1){
-			client_conn_t client_conn_info;
-			client_conn_info.connfd = connfd;
-			client_conn_info.server = cli;
-            pthread_create(&child, NULL, handle_client, &client_conn_info);
+			client_conn_t *client_conn_info = (client_conn_t *) malloc(sizeof(client_conn_info));
+			client_conn_info->connfd = connfd;
+			client_conn_info->server = cli;
+            pthread_create(&child, NULL, handle_client, client_conn_info);
         }else{
             //sleep for 0.5 seconds
             usleep(500000);
@@ -88,8 +88,12 @@ void * handle_client(void * client_conn_info)
 {
     client_conn_t *connection = (client_conn_t *) client_conn_info;
     char request[40], fname[40];
+	char    *filebuffer;
+	long    numbytes;
+	const char *errormessage = {"Malformed request:\nGET /<FILEPATH> HTTP/1.0\n"};
     while(1) {
 		//clear out request
+		memset(filebuffer, '\0', numbytes);
 		memset(request, '\0', sizeof(request));
 		// Read in client request
 		if(read(connection->connfd, request, sizeof(request)) <= 0){
@@ -99,26 +103,21 @@ void * handle_client(void * client_conn_info)
             return 0;
 		}
 		fprintf(stdout, "[%s]%s\n", inet_ntoa(connection->server.sin_addr), request);
-		fflush(stdout);
 		char *reqpointer = strstr(request, " HTTP/1.0");
 		if(reqpointer != NULL) {
 			*reqpointer = '\0';
 		}else{
-			char *errormessage = {"Malformed request:\nGET /<FILEPATH> HTTP/1.0\n"};
 			write(connection->connfd, errormessage, strlen(errormessage));
 			continue;
 		}
 		if(strncmp(request, "GET /", strlen("GET /")) == 0) {
 			strncpy( fname, &request[strlen("GET /")], strlen(request));	
 		}else{
-			char *errormessage = {"Malformed request:\nGET /<FILEPATH> HTTP/1.0\n"};
 			write(connection->connfd, errormessage, strlen(errormessage));
 			continue;
 		}
 		fname[sizeof(request)] = '\0';
-		FILE *fp = fopen(fname, "r");
-		char    *filebuffer;
-		long    numbytes;
+		FILE *fp = fopen(fname, "rb");
 		if(fp == NULL)
 		{	
 			write(connection->connfd, "Server Error: 404 File Not Found", sizeof(request));
@@ -132,9 +131,8 @@ void * handle_client(void * client_conn_info)
 			write(connection->connfd, "Can't read file", sizeof(request));
 		}
 		fread(filebuffer, sizeof(char), numbytes, fp);
-		write(connection->connfd, filebuffer, numbytes);
 		fclose(fp);
-		free(filebuffer);
+		write(connection->connfd, filebuffer, numbytes);
     }
     pthread_exit(NULL);
 }
