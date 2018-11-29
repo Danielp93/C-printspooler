@@ -53,7 +53,6 @@ client_conn_t *client_init(const char* server_addr, const int portno)
         fprintf(stderr, "Can't create Socket!\n");
         exit(1);
     }
-    
     server = gethostbyname(server_addr);
     addr_list = (struct in_addr **) server->h_addr_list;
 
@@ -61,7 +60,6 @@ client_conn_t *client_init(const char* server_addr, const int portno)
         fprintf(stderr,"No such host!!\n");
         exit(1);
     }
-
     struct sockaddr_in serv_addr;
     memset(&serv_addr, '0', sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -100,12 +98,10 @@ void client_send_task(client_conn_t *client_conn)
         if(strlen(request) <= 1){
             continue;
         }
-        //strip newline from request
-        request[strcspn(request, "\n")] = 0;
         //Send request to server
         write(client_conn->connfd, request, strlen(request));
         //Wait for 0.5 secs so server can respond
-        usleep(500000);
+        sleep(1);
         while(1){
             
             //Check size of incomming message, if nothing comming, print message.

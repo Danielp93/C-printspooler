@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
 			client_conn_t *client_conn_info = (client_conn_t *) malloc(sizeof(client_conn_info));
 			client_conn_info->connfd = connfd;
 			client_conn_info->server = cli;
+			fprintf(stderr, "Client[%s] connected.\n", inet_ntoa(client_conn_info->server.sin_addr));
             pthread_create(&child, NULL, handle_client, client_conn_info);
         }else{
             //sleep for 0.5 seconds
@@ -103,6 +104,7 @@ void * handle_client(void * client_conn_info)
             return 0;
 		}
 		fprintf(stdout, "[%s]%s\n", inet_ntoa(connection->server.sin_addr), request);
+		request[strcspn(request, "\n")] = 0;
 		char *reqpointer = strstr(request, " HTTP/1.0");
 		if(reqpointer != NULL) {
 			*reqpointer = '\0';
