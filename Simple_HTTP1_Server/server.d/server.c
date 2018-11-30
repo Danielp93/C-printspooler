@@ -9,9 +9,11 @@
 #include <signal.h>//for signal func
 #include <stdbool.h>
 #include <string.h>
+#include <fcntl.h>
 #include <pthread.h>
 
 #define QUEUE_SIZE 30
+#define BUFF_SIZE 255
 
 typedef struct {
   int connfd;
@@ -88,53 +90,40 @@ int main(int argc, char *argv[])
 void * handle_client(void * client_conn_info)
 {
     client_conn_t *connection = (client_conn_t *) client_conn_info;
-    char request[40], fname[40];
-	char    *filebuffer;
-	long    numbytes;
-	const char *errormessage = {"Malformed request:\nGET /<FILEPATH> HTTP/1.0\n"};
+	char fname[80], buff[BUFF_SIZE];
+	int numbytes;
     while(1) {
-		//clear out request
-		memset(filebuffer, '\0', numbytes);
-		memset(request, '\0', sizeof(request));
-		// Read in client request
-		if(read(connection->connfd, request, sizeof(request)) <= 0){
-			fprintf(stderr, "\nA Client closed a connection.\n");
-			fflush(stderr);
-			close(connection->connfd);
-            return 0;
+		if((numbytes = read(connection->connfd, buff, BUFF_SIZE)) >= 0){
+			if(numbytes > 0){
+				buff[strcspn(buff, "\n")] = 0;
+				fprintf(stdout, "[%s]%s\n", inet_ntoa(connection->server.sin_addr), buff);
+			}else
+			{
+				fprintf(stderr, "Client[%s] Closed connection.\n", inet_ntoa(connection->server.sin_addr));
+				close(connection->connfd);
+				break;
+			}
 		}
-		fprintf(stdout, "[%s]%s\n", inet_ntoa(connection->server.sin_addr), request);
-		request[strcspn(request, "\n")] = 0;
-		char *reqpointer = strstr(request, " HTTP/1.0");
-		if(reqpointer != NULL) {
-			*reqpointer = '\0';
+		if(strncmp(buff, "GET /", strlen("GET /")) == 0) {
+			strncpy( fname, &buff[strlen("GET /")], strlen(buff));	
 		}else{
-			write(connection->connfd, errormessage, strlen(errormessage));
+			write(connection->connfd, "Malformed request:\nGET /<FILEPATH>\n", strlen("Malformed request:\nGET /<FILEPATH>\n"));
 			continue;
 		}
-		if(strncmp(request, "GET /", strlen("GET /")) == 0) {
-			strncpy( fname, &request[strlen("GET /")], strlen(request));	
-		}else{
-			write(connection->connfd, errormessage, strlen(errormessage));
-			continue;
-		}
-		fname[sizeof(request)] = '\0';
-		FILE *fp = fopen(fname, "rb");
-		if(fp == NULL)
+
+		int fd = open(fname, O_RDONLY, 0);
+		if(fd == -1)
 		{	
-			write(connection->connfd, "Server Error: 404 File Not Found", sizeof(request));
+			write(connection->connfd, "Server Error: 404 File Not Found\n", strlen("Server Error: 404 File Not Found\n"));
 			continue;
 		}
-		fseek(fp, 0L, SEEK_END);
-		numbytes = ftell(fp);
-		fseek(fp, 0L, SEEK_SET);
-		filebuffer = (char*) malloc(numbytes * sizeof(char));if(filebuffer == NULL)
+		memset(buff, '0', BUFF_SIZE);
+		while((numbytes = read(fd, buff, BUFF_SIZE)) > 0)
 		{
-			write(connection->connfd, "Can't read file", sizeof(request));
+			write(connection->connfd, buff, numbytes);
 		}
-		fread(filebuffer, sizeof(char), numbytes, fp);
-		fclose(fp);
-		write(connection->connfd, filebuffer, numbytes);
+		memset(buff, '0', BUFF_SIZE);
+		close(fd);
     }
     pthread_exit(NULL);
 }

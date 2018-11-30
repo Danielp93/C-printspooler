@@ -8,18 +8,18 @@
 #include <signal.h>
 #include <sys/ioctl.h>
 #include "string.h"
-
 #include "client.h"
 
+#define BUFF_SIZE 255
+#define REQ_SIZE 80
 
-#define TCP_PORT 9000
-
-static int running = 1;
+static int global_connfd;
 
 void INThandler(int signo){
     if(signo == SIGINT){
-        fprintf(stderr, "\nCTRL-C CAPTURED\n");
-        running = 0;
+        fprintf(stderr, "\nCtrl-c Captured\n");
+        close(global_connfd);
+        exit(0);
     }
 }
 
@@ -35,8 +35,8 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, INThandler);
     client_conn_t *client_conn  = client_init(hostname, atoi(argv[1]));
-    client_send_task(client_conn);
-    close(client_conn->connfd);
+    client_send_request();
+    close(global_connfd);
     free(client_conn);
     return 0;
 }
@@ -74,57 +74,35 @@ client_conn_t *client_init(const char* server_addr, const int portno)
        printf("\n Error : Connect Failed \n");
        exit(1);
     }
-
-    client_conn = malloc(sizeof(client_conn));
-    client_conn->connfd = sockfd;
-    client_conn->server = serv_addr;
-
+    global_connfd = sockfd;
     return client_conn;
 }
 
-void client_send_task(client_conn_t *client_conn)
+void client_send_request()
 {
-    char request[40];
-    int n;
-    while(running) {
-        char *response = NULL;
-        int inc_length, offset, total_length = 0;
-        //Zero out request buffer and variables for new request
-        memset(request, 0, sizeof(request));
+    char buff[BUFF_SIZE];
+    int n, numbytes;
+    global_connfd; 
+    while(1) {
         n = 0;
         //Input Request -> GET /<FILE> HTML/1.0
-        while ((request[n++] = getchar()) != '\n');
+        while ((buff[n++] = getchar()) != '\n');
         //Clearance for only \n character
-        if(strlen(request) <= 1){
+        if(strlen(buff) <= 1){
             continue;
         }
         //Send request to server
-        write(client_conn->connfd, request, strlen(request));
-        //Wait for 0.5 secs so server can respond
-        sleep(1);
-        while(1){
-            
-            //Check size of incomming message, if nothing comming, print message.
-            ioctl(client_conn->connfd, FIONREAD, &inc_length);
-            if(inc_length != 0){
-                total_length += inc_length;
-                //Allocate memory for new message block
-                response = realloc(response, total_length);
-                if (NULL == response)
-                {
-                    perror("realloc");
-                    abort();
-                }
-                offset = total_length - inc_length;
-                //Write new message block to end of old message
-                read(client_conn->connfd, response + offset, inc_length);
-            }
-            else{
-                fprintf(stdout, "%s\n", response);
-                fflush(stdout);
+        write(global_connfd, buff, strlen(buff));
+        memset(buff, '\0', BUFF_SIZE);
+        while((numbytes = read(global_connfd, buff, BUFF_SIZE)) > 0)
+		{
+            if(numbytes < BUFF_SIZE){
+			    write(1, buff, numbytes);
+                memset(buff, '\0', BUFF_SIZE);
                 break;
             }
-        }
-    free(response);
+		    write(1, buff, BUFF_SIZE);
+		}
+        fprintf(stdout, "\n");
     }
 }

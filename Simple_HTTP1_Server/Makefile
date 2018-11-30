@@ -8,3 +8,7 @@ client : ./client.d/client.c
 
 clean : 
 	rm -f ./client ./server
+
+rebuild:
+	make clean
+	make all

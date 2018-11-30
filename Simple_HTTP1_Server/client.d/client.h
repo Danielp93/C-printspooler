@@ -7,4 +7,4 @@ typedef struct {
 
 client_conn_t *client_init(const char* server_addr, const int portno);
 
-void client_send_task(client_conn_t *client_conn);
+void client_send_request();
