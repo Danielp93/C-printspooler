@@ -110,7 +110,6 @@ void * handle_client(void * client_conn_info)
 			write(connection->connfd, "Malformed request:\nGET /<FILEPATH>\n", strlen("Malformed request:\nGET /<FILEPATH>\n"));
 			continue;
 		}
-
 		int fd = open(fname, O_RDONLY, 0);
 		if(fd == -1)
 		{	

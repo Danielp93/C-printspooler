@@ -82,10 +82,9 @@ void client_send_request()
 {
     char buff[BUFF_SIZE];
     int n, numbytes;
-    global_connfd; 
     while(1) {
         n = 0;
-        //Input Request -> GET /<FILE> HTML/1.0
+        //Input Request -> GET /<FILE>
         while ((buff[n++] = getchar()) != '\n');
         //Clearance for only \n character
         if(strlen(buff) <= 1){
