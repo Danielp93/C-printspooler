@@ -1,14 +1,9 @@
 #include <stdio.h>
-#include <arpa/inet.h>//for htonl and sockaddr_in
-#include <unistd.h>//for getopt,read,write,close
-#include <stdlib.h>//for atoi
-#include <string.h>//for memset and memcpy
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <errno.h>//for errno
-#include <signal.h>//for signal func
-#include <stdbool.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <fcntl.h>
 #include <pthread.h>
 

@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
-#include <errno.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <string.h>
 #include <unistd.h>
 #include <signal.h>
-#include <sys/ioctl.h>
-#include "string.h"
 #include "client.h"
 
 #define BUFF_SIZE 255
