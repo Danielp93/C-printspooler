@@ -7,15 +7,12 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-#define QUEUE_SIZE 30
 #define BUFF_SIZE 255
 
 typedef struct {
   int connfd;
   struct sockaddr_in server;
 } client_conn_t;
-
-static int stop = 0;
 
 void * handle_client(void * connfd);
 
@@ -90,7 +87,7 @@ void * handle_client(void * client_conn_info)
     while(1) {
 		if((numbytes = read(connection->connfd, buff, BUFF_SIZE)) >= 0){
 			if(numbytes > 0){
-				buff[strcspn(buff, "\n")] = 0;
+				buff[strcspn(buff, "\n")] = '\0';
 				fprintf(stdout, "[%s]%s\n", inet_ntoa(connection->server.sin_addr), buff);
 			}else
 			{
@@ -111,13 +108,15 @@ void * handle_client(void * client_conn_info)
 			write(connection->connfd, "Server Error: 404 File Not Found\n", strlen("Server Error: 404 File Not Found\n"));
 			continue;
 		}
-		memset(buff, '0', BUFF_SIZE);
+		memset(buff, '\0', BUFF_SIZE);
 		while((numbytes = read(fd, buff, BUFF_SIZE)) > 0)
 		{
 			write(connection->connfd, buff, numbytes);
 		}
-		memset(buff, '0', BUFF_SIZE);
+		memset(buff, '\0', BUFF_SIZE);
 		close(fd);
     }
+	close(connection->connfd);
+	free(connection);
     pthread_exit(NULL);
 }

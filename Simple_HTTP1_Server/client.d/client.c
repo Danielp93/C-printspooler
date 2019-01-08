@@ -30,21 +30,19 @@ int main(int argc, char *argv[])
     }
     char *hostname= strsep(&argv[1], ":");
 
-
     signal(SIGINT, INThandler);
-    client_conn_t *client_conn  = client_init(hostname, atoi(argv[1]));
-    client_send_request();
-    close(global_connfd);
-    free(client_conn);
+    if(!client_init(hostname, atoi(argv[1]))){
+        client_send_request();
+        close(global_connfd);
+    }
     return 0;
 }
 
-client_conn_t *client_init(const char* server_addr, const int portno)
+int *client_init(const char* server_addr, const int portno)
 {
     int sockfd;
     struct hostent *server;
     struct in_addr **addr_list;
-    client_conn_t *client_conn;
 
     if((sockfd = socket(AF_INET,SOCK_STREAM,0))<0)
     {
@@ -59,21 +57,21 @@ client_conn_t *client_init(const char* server_addr, const int portno)
         exit(1);
     }
     struct sockaddr_in serv_addr;
-    memset(&serv_addr, '0', sizeof(serv_addr));
+    memset(&serv_addr, '\0', sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port=htons(portno);
+    serv_addr.sin_port = htons(portno);
     if(inet_pton(AF_INET, inet_ntoa(*addr_list[0]), &serv_addr.sin_addr) <= 0)
     {
-        printf("\n inet_pton error occured\n");
+        printf("\n Inet_pton error occured\n");
         exit(1);
     }
-    if(connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    if(connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
     {
        printf("\n Error : Connect Failed \n");
        exit(1);
     }
     global_connfd = sockfd;
-    return client_conn;
+    return 0;
 }
 
 void client_send_request()
@@ -85,7 +83,7 @@ void client_send_request()
         //Input Request -> GET /<FILE>
         while ((buff[n++] = getchar()) != '\n');
         //Clearance for only \n character
-        if(strlen(buff) <= 1){
+        if(strlen(buff) == 1){
             continue;
         }
         //Send request to server
@@ -94,11 +92,11 @@ void client_send_request()
         while((numbytes = read(global_connfd, buff, BUFF_SIZE)) > 0)
 		{
             if(numbytes < BUFF_SIZE){
-			    write(1, buff, numbytes);
+			    write(STDOUT_FILENO, buff, numbytes);
                 memset(buff, '\0', BUFF_SIZE);
                 break;
             }
-		    write(1, buff, BUFF_SIZE);
+		    write(STDOUT_FILENO, buff, BUFF_SIZE);
 		}
         fprintf(stdout, "\n");
     }
