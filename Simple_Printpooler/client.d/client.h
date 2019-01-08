@@ -1,10 +1,3 @@
-#include <sys/socket.h>
+int *client_init(const char* server_addr, const int portno);
 
-typedef struct {
-  int connfd;
-  struct sockaddr_in server;
-} client_conn_t;
-
-client_conn_t *client_init(const char* server_addr, const int portno);
-
-void client_send_task(client_conn_t *client_conn);
+void client_send_task();
